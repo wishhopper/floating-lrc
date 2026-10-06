@@ -1,5 +1,7 @@
 # Floating lrc
 
+![Floating lrc demo: Tokyo Neko and Star Hop frames](docs/demo.gif)
+
 Synced lyrics for **YouTube Music**, shown like subtitles floating on your desktop.
 A transparent, always-on-top overlay that stays out of your way: clicks pass straight through to
 the apps underneath, and the controls only appear when you hover.
