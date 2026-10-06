@@ -29,6 +29,9 @@ Works with any language (English, Chinese, Korean, Japanese, ...). Lyrics come f
 1. Unzip the download anywhere you like (for example your Documents folder).
 2. Double-click **Install.command**.
    - If macOS says it cannot verify the file: right-click it, choose **Open**, then **Open** again.
+   - If it says you do not have permission to run it (this can happen with files downloaded from GitHub),
+     open Terminal, type `chmod +x ` (with a trailing space), drag **Install.command** and
+     **Start.command** into the window, press Return, then try again.
    - It installs what the overlay needs and creates **Floating lrc.app** next to it.
      If Node.js is missing it downloads a private copy; nothing is installed system-wide.
 3. In Chrome open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**
@@ -48,6 +51,8 @@ to have it start with your Mac. If you move the folder later, run Install.comman
 - Settings are remembered between launches.
 
 ## Troubleshooting
+- **"Permission denied" when opening a .command file**: run `chmod +x Install.command Start.command`
+  in Terminal from inside the folder.
 - **Nothing shows up**: make sure the overlay is running (menu bar icon), reload the extension on
   `chrome://extensions`, then reload the YouTube Music tab.
 - **"No synced lyrics found"**: LRCLIB does not have that song yet. Try another version of the track.
