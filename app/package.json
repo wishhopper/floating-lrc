@@ -1,0 +1,17 @@
+{
+  "name": "floating-lrc",
+  "productName": "Floating lrc",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "description": "Synced lyrics as a transparent, click-through desktop overlay",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  },
+  "author": "wishhopper",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wishhopper/floating-lrc.git"
+  }
+}
