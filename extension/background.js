@@ -9,9 +9,15 @@ async function fetchJson(path, params) {
   for (const [k, v] of Object.entries(params || {})) {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
   }
-  const res = await fetch(url.toString(), {
-    headers: { 'Lrclib-Client': 'ytm-floating-lyrics v0.1.0 (personal extension)' },
-  });
+  // LRCLIB sometimes answers 429/5xx ("server is busy"); retry a couple of times before giving up.
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(url.toString(), {
+      headers: { 'Lrclib-Client': 'floating-lrc v1.0.0 (https://github.com/wishhopper/floating-lrc)' },
+    });
+    if (res.status !== 429 && res.status < 500) break;
+    await new Promise(function (r) { setTimeout(r, 700 * (attempt + 1)); });
+  }
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('HTTP ' + res.status);
   return res.json();

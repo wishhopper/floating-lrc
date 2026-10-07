@@ -1,0 +1,74 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Floating lrc matching check</title>
+<style>
+:root{--g:#1f8a4c;--gb:#e4f5ea;--r:#c62828;--rb:#fdeaea;--x:#777;--xb:#efefef}
+body{font:14px -apple-system,system-ui,sans-serif;margin:24px;color:#222;max-width:1100px}
+h2{margin:0 0 6px}p{margin:6px 0}
+#bar{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:14px 0 6px;background:#eee}
+#bar div{height:100%;transition:width .3s}
+.legend span{display:inline-block;margin-right:18px}.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;margin-top:12px}td,th{padding:7px 10px;text-align:left;vertical-align:top;border-bottom:1px solid #fff}
+th{background:#f4f4f4}tr.g td{background:var(--gb)}tr.r td{background:var(--rb)}tr.x td{background:var(--xb);color:#555}
+.tag{font-weight:600}.g .tag{color:var(--g)}.r .tag{color:var(--r)}.x .tag{color:var(--x)}
+button{padding:8px 14px;font-size:14px}
+</style></head>
+<body><h2>Floating lrc: matching check</h2>
+<p>Runs the extension's real matching code against LRCLIB for each title as YouTube Music shows it.</p>
+<p><button id="go">Run check</button> <button id="copy" disabled>Copy results</button> <span id="prog"></span></p>
+<div id="bar"><div id="bg" style="background:var(--g);width:0"></div><div id="br1" style="background:var(--r);width:0"></div><div id="br2" style="background:#e57373;width:0"></div><div id="bx" style="background:#bbb;width:0"></div></div>
+<div class="legend"><span><i style="background:var(--g)"></i>Green: works, nothing to do <b id="cg">0</b></span><span><i style="background:var(--r)"></i>Red: matching bug to fix <b id="cr1">0</b></span><span><i style="background:#e57373"></i>Red: no timed lyrics yet, we make them <b id="cr2">0</b></span><span><i style="background:#bbb"></i>Grey: remix / instrumental, not needed <b id="cx">0</b></span></div>
+<table><thead><tr><th>#</th><th>Title (as YouTube Music shows it)</th><th>Length</th><th>Result</th><th>Details</th></tr></thead><tbody id="rows"></tbody></table>
+<script src="../extension/lrc.js"></script>
+<script>
+const ARTIST='NCT WISH';
+// kind: S = timed lyrics should exist, N = none on LRCLIB yet (per status table), R = exists but timing is off,
+//       U = unclear in the table, X = remix / instrumental / sped up
+const TRACKS=[["BOY MEETS GIRL", "3:20", "N"], ["YO-I-DON!", "2:44", "S"], ["Ode to Love", "3:11", "S"], ["프린스핑송", "2:30", "R"], ["Steady", "3:00", "S"], ["Sticky", "2:55", "S"], ["poppop", "3:03", "S"], ["Surf", "3:04", "S"], ["COLOR", "3:00", "S"], ["1000", "2:52", "S"], ["Don't Say You Love Me", "2:48", "S"], ["WISH (Japanese Ver.)", "3:06", "S"], ["3분까진 필요 없어 3 Minutes", "2:47", "S"], ["Cheat Code", "3:01", "S"], ["Hello Mellow", "3:02", "S"], ["Baby Blue", "2:31", "S"], ["고양이 릴스 Reel-ationship", "3:09", "S"], ["Miracle", "2:58", "S"], ["Hands Up", "3:16", "U"], ["Songbird (Japanese Ver.)", "3:02", "U"], ["Silly Dance", "3:03", "N"], ["Melt Inside My Pocket", "3:12", "S"], ["Skate", "3:20", "N"], ["Voyage", "3:26", "N"], ["2.0 (TWO POINT O)", "2:50", "S"], ["NASA", "3:04", "S"], ["만약 네가 4시에 온다면 Still 3PM", "2:46", "S"], ["WICHU", "3:28", "S"], ["Dunk Shot", "3:00", "S"], ["If you love me let me know (Would You Marry Me? : Original Television Soundtrack)", "3:00", "S"], ["Feel The Beat", "2:56", "N"], ["여우비 Crush", "3:21", "S"], ["Wishful Winter", "3:09", "S"], ["Videohood", "3:01", "S"], ["FAR AWAY", "3:05", "S"], ["Wishing Star", "2:34", "S"], ["CHOO CHOO", "3:35", "N"], ["Design", "3:00", "S"], ["Tears Are Falling (Japanese Ver.)", "3:06", "U"], ["Dreamcatcher", "2:58", "S"], ["Street (2AM)", "3:05", "N"], ["We Go!", "3:02", "S"], ["Same Sky", "3:04", "N"], ["SOMEDAY", "2:38", "S"], ["Supercute", "2:52", "S"], ["On & On 점점 더 더", "3:04", "S"], ["Glow Up", "2:47", "N"], ["ZONE", "2:41", "S"], ["P.O.V", "3:02", "N"], ["Everglow", "2:58", "N"], ["Good Morning", "3:03", "S"], ["Make You Shine", "3:20", "S"], ["BUBBLE GUM", "2:34", "S"], ["Our Adventures", "2:53", "N"], ["Sail Away (Japanese Ver.)", "3:26", "U"], ["Touchdown", "3:13", "N"], ["poppop (Arkins Remix)", "4:31", "X"], ["Steady (Snail's House Remix)", "3:02", "X"], ["Make You Shine (English Version)", "3:20", "S"], ["프린스핑송 (inst.)", "2:30", "X"], ["Sticky (yunji Remix)", "2:30", "X"], ["If you love me let me know (Would You Marry Me? : Original Television Soundtrack) (Instrumental)", "3:01", "X"], ["poppop (Sped Up)", "1:00", "X"], ["Wishing Star (Inst.)", "2:34", "X"], ["Make You Shine (Instrumental)", "3:20", "X"]];
+async function fetchJson(path, params){
+  const u=new URL('https://lrclib.net'+path);
+  for(const [k,v] of Object.entries(params||{})) if(v) u.searchParams.set(k,String(v));
+  let res;
+  for(let i=0;i<4;i++){
+    res=await fetch(u);
+    if(res.status!==429&&res.status<500) break;
+    await new Promise(r=>setTimeout(r,800*(i+1)));
+  }
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return res.json();
+}
+const $=id=>document.getElementById(id);
+const out=[];
+const cnt={g:0,r1:0,r2:0,x:0};
+function secs(s){const p=s.split(':');return (+p[0])*60+(+p[1]);}
+function paint(){
+  const n=TRACKS.length;
+  $('bg').style.width=cnt.g/n*100+'%';$('br1').style.width=cnt.r1/n*100+'%';$('br2').style.width=cnt.r2/n*100+'%';$('bx').style.width=cnt.x/n*100+'%';
+  $('cg').textContent=cnt.g;$('cr1').textContent=cnt.r1;$('cr2').textContent=cnt.r2;$('cx').textContent=cnt.x;
+}
+$('go').onclick=async()=>{
+  $('go').disabled=true; $('rows').innerHTML=''; out.length=0; cnt.g=cnt.r1=cnt.r2=cnt.x=0; paint();
+  for(let i=0;i<TRACKS.length;i++){
+    const [title,len,kind]=TRACKS[i]; const d=secs(len);
+    let r=null,err=null;
+    try{ r=await LrcUtil.lookup(fetchJson,{title,artist:ARTIST,album:'',duration:d}); }catch(e){err=e.message;}
+    const matched=!!(r&&r.item);
+    let cls,tag,det='';
+    if(kind==='X'){cls='x';tag='Not needed';cnt.x++;det=matched?'(matched anyway: '+r.item.trackName+')':'remix / instrumental / sped up';}
+    else if(err){cls='r';tag='Error, rerun';cnt.r1++;det=err;}
+    else if(matched&&kind==='R'){cls='r';tag='Matched but timing is off';cnt.r2++;det='re-time later: '+r.item.trackName+' | '+r.item.duration+'s';}
+    else if(matched){cls='g';tag='OK';cnt.g++;det=r.item.trackName+' | '+r.item.albumName+' | '+r.item.duration+'s (diff '+Math.round(Math.abs(r.item.duration-d))+'s) via '+r.how;}
+    else if(kind==='N'){cls='r';tag='No timed lyrics yet';cnt.r2++;det='LRCLIB has plain text only; we make the timing';}
+    else {cls='r';tag='Matching problem';cnt.r1++;det=kind==='U'?'status unclear in the table, needs a look':'timed lyrics should exist but were not matched';}
+    const tr=document.createElement('tr'); tr.className=cls;
+    tr.innerHTML='<td>'+(i+1)+'</td><td></td><td>'+len+'</td><td class="tag"></td><td></td>';
+    tr.children[1].textContent=title; tr.children[3].textContent=tag; tr.children[4].textContent=det;
+    $('rows').appendChild(tr);
+    out.push([i+1,title,len,cls,tag,det].join('\t'));
+    $('prog').textContent=(i+1)+' / '+TRACKS.length; paint();
+    await new Promise(r=>setTimeout(r,250));
+  }
+  $('copy').disabled=false; $('go').disabled=false;
+};
+$('copy').onclick=()=>{navigator.clipboard.writeText(out.join('\n'));$('copy').textContent='Copied';};
+</script></body></html>

@@ -88,6 +88,20 @@ function t(name, fn) {
     assert.strictEqual(U.pickBest([mk(100, null), mk(100, '  ')], 100), null);
   });
 
+  // ---- pickBestScored ----
+  await t('pickBestScored: prefers same title/artist/duration, rejects junk duration & other songs', async () => {
+    const L = '[00:01.00]x';
+    const list = [
+      { trackName: 'Hands Up', artistName: 'NCT WISH', duration: 30, syncedLyrics: L },
+      { trackName: 'Other Song', artistName: 'NCT WISH', duration: 200, syncedLyrics: L },
+      { trackName: 'Hands Up (Korean Ver.)', artistName: 'NCTWISH', duration: 201, syncedLyrics: L },
+    ];
+    const r = U.pickBestScored(list, { title: 'Hands Up', artist: 'NCT WISH', duration: 200 });
+    assert.strictEqual(r.duration, 201);
+    assert.ok(U.pickBestScored([{ trackName: 'Reel-ationship', artistName: 'NCT WISH', duration: 189, syncedLyrics: L }], { title: 'Reel‐ationship', artist: 'NCT WISH', duration: 230 }));
+    assert.strictEqual(U.pickBestScored([list[1]], { title: 'Hands Up', artist: 'NCT WISH', duration: 200 }), null);
+  });
+
   // ---- lookup (using a mocked fetchJson)----
   await t('lookup: exact match hit', async () => {
     const calls = [];
@@ -104,17 +118,48 @@ function t(name, fn) {
     const f = async (path, p) => {
       seen.push([path, p.track_name || p.q]);
       if (path === '/api/get') return null;
-      if (p.track_name === 'Song' && p.artist_name === 'Artist A') return [{ duration: 200, syncedLyrics: '[00:01.00]x' }];
+      if (p.track_name === 'Song' && p.artist_name === 'Artist A') return [{ trackName: 'Song', artistName: 'Artist A', duration: 200, syncedLyrics: '[00:01.00]x' }];
       return [];
     };
     const r = await U.lookup(f, { title: 'Song (Official Audio)', artist: 'Artist A & B', album: 'Alb', duration: 201 });
     assert.strictEqual(r.how, 'search');
     assert.strictEqual(seen[1][1], 'Song');
   });
+  await t('lookup: mixed Korean+English title finds the English-only entry', async () => {
+    const f = async (path, p) => {
+      if (path === '/api/get') return null;
+      const q = p.track_name || p.q || '';
+      if (/^Reel-ationship/.test(q)) return [{ trackName: 'Reel-ationship', artistName: 'NCT WISH', duration: 189, syncedLyrics: '[00:01.00]x' }];
+      return [];
+    };
+    const r = await U.lookup(f, { title: '고양이 릴스 Reel-ationship', artist: 'NCT WISH', album: '', duration: 189 });
+    assert.ok(r && r.item && r.item.trackName === 'Reel-ationship');
+  });
+  await t('lookup: Korean-only title falls back to artist + duration', async () => {
+    const f = async (path, p) => {
+      if (path === '/api/get') return null;
+      if (p.q === 'NCT WISH') return [
+        { id: 1, trackName: 'Princeping Song', artistName: 'NCT WISH', duration: 150, syncedLyrics: '[00:01.00]x' },
+        { id: 2, trackName: 'Other', artistName: 'NCT WISH', duration: 200, syncedLyrics: '[00:01.00]x' },
+      ];
+      return [];
+    };
+    const r = await U.lookup(f, { title: '왕자의 노래', artist: 'NCT WISH', album: '', duration: 150 });
+    assert.ok(r && r.item.id === 1);
+  });
+  await t('lookup: Korean-only alias title maps to the English title', async () => {
+    const f = async (path, p) => {
+      if (path === '/api/get') return null;
+      if ((p.track_name || p.q || '').indexOf('Princeping Song') === 0) return [{ id: 7, trackName: 'Princeping Song (From "Princess Catch! Teenieping")', artistName: 'NCT WISH', duration: 150, syncedLyrics: '[00:01.00]x' }];
+      return [];
+    };
+    const r = await U.lookup(f, { title: '프린스핑송', artist: 'NCT WISH', album: '', duration: 150 });
+    assert.ok(r && r.item.id === 7);
+  });
   await t('lookup: search continues even if exact match throws', async () => {
     const f = async (path) => {
       if (path === '/api/get') throw new Error('boom');
-      return [{ duration: 100, syncedLyrics: '[00:01.00]x' }];
+      return [{ trackName: 'T', artistName: 'A', duration: 100, syncedLyrics: '[00:01.00]x' }];
     };
     const r = await U.lookup(f, { title: 'T', artist: 'A', album: 'B', duration: 100 });
     assert.ok(r && r.item);

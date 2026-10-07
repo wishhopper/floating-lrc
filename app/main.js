@@ -89,7 +89,7 @@ function sendState(payload) {
   win.webContents.send('state', payload);
   clearTimeout(hideTimer);
   hideTimer = setTimeout(function () {
-    if (win && !win.isDestroyed()) win.webContents.send('state', { mode: 'text', text: '', dim: true });
+    if (win && !win.isDestroyed()) win.webContents.send('state', { mode: 'text', text: '', dim: true, rest: true });
   }, HIDE_AFTER_MS);
 }
 

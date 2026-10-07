@@ -30,6 +30,20 @@
   .l.in { animation: in .26s ease-out; }
   @keyframes in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
+
+  /* ---------- resting cat (shown instead of "no lyrics" / when nothing is playing) ---------- */
+  .rest { position: relative; z-index: 10; flex: none; margin: 0 auto; color: var(--fg); opacity: .88; filter: drop-shadow(1px 0 0 rgba(20,22,48,.5)) drop-shadow(-1px 0 0 rgba(20,22,48,.5)) drop-shadow(0 1px 0 rgba(20,22,48,.5)) drop-shadow(0 -1px 0 rgba(20,22,48,.5)) drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+  .rest .cat { height: 100%; width: auto; display: block; overflow: visible; }
+  .rest .cat .body { transform-box: fill-box; transform-origin: 50% 100%; animation: breathe 3.8s ease-in-out infinite; }
+  .rest .cat .head { animation: purr .13s linear infinite alternate; }
+  .rest .z { position: absolute; font-weight: 700; line-height: 1; opacity: 0; animation: zzz 3.6s ease-in infinite; text-shadow: var(--shadow); }
+  .rest .purr { position: absolute; font-weight: 600; line-height: 1; opacity: .55; animation: purrfade 1.2s ease-in-out infinite; text-shadow: var(--shadow); }
+  @keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.06); } }
+  @keyframes purr { from { transform: translateX(-.35px); } to { transform: translateX(.35px); } }
+  @keyframes zzz { 0% { opacity: 0; transform: translate(0, 0) scale(.7); } 15% { opacity: .9; } 100% { opacity: 0; transform: translate(10px, -22px) scale(1.15); } }
+  @keyframes purrfade { 0%, 100% { opacity: .15; } 50% { opacity: .6; } }
+  body.still .rest .cat .body { animation-duration: 5s; }
+
   /* ---------- pixel frame ---------- */
   #frame { position: absolute; inset: 0; pointer-events: none; display: none; }
   body.framed #frame { display: block; }
@@ -55,8 +69,8 @@
   .bar {
     position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
     display: flex; gap: 2px; align-items: center; padding: 3px; border-radius: 11px; z-index: 5;
-    background: rgba(28,28,30,.9); box-shadow: 0 2px 12px rgba(0,0,0,.4);
-    opacity: 0; pointer-events: none; transition: opacity .15s; white-space: nowrap; color: #fff;
+    background: rgba(28,28,30,.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    opacity: 0; pointer-events: none; transition: opacity .2s; white-space: nowrap; color: #fff;
   }
   body.hover .bar { opacity: 1; pointer-events: auto; }
   .bar button {
@@ -76,7 +90,7 @@
 
   .pop {
     position: absolute; top: 38px; left: 50%; transform: translateX(-50%); z-index: 6;
-    padding: 6px 8px 7px; border-radius: 9px; background: rgba(28,28,30,.94); box-shadow: 0 4px 18px rgba(0,0,0,.45);
+    padding: 6px 8px 7px; border-radius: 9px; background: rgba(28,28,30,.7); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 4px 18px rgba(0,0,0,.3);
     color: #fff; width: 170px; display: none;
   }
   .pop.open { display: block; }
@@ -88,17 +102,17 @@
   }
   .sw b:hover { transform: scale(1.12); }
   .sw b.none::after { content: ''; position: absolute; left: 50%; top: -1px; width: 1.5px; height: 15px; background: #ff6b6b; transform: translateX(-50%) rotate(45deg); }
-  .row { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-weight: 600; font-size: 8px; line-height: 1; font-family: inherit; color: rgba(255,255,255,.6); }
+  .row { display: flex; align-items: center; gap: 6px; margin-top: 12px; height: 12px; font-weight: 600; font-size: 8px; line-height: 1; font-family: inherit; color: rgba(255,255,255,.6); }
   .row span { width: 36px; white-space: nowrap; }
-  .row input[type=range] { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; border-radius: 2px; outline: none; background: rgba(255,255,255,.2); }
-  .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,.3); }
+  .row input[type=range] { flex: 1; min-width: 0; width: 0; margin: 0; height: 4px; -webkit-appearance: none; appearance: none; border-radius: 2px; outline: none; background: rgba(255,255,255,.2); }
+  .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,.3); }
   .row input.hue { background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
 
   .grip {
-    position: absolute; right: 3px; bottom: 3px; width: 18px; height: 18px; cursor: nwse-resize; z-index: 5;
+    position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; cursor: nwse-resize; z-index: 5;
     opacity: 0; pointer-events: none; transition: opacity .15s;
-    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,.7) 50%, rgba(255,255,255,.7) 58%, transparent 58%, transparent 72%, rgba(255,255,255,.7) 72%, rgba(255,255,255,.7) 80%, transparent 80%);
-    filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cg fill='white'%3E%3Ccircle cx='11' cy='11' r='1.4'/%3E%3Ccircle cx='11' cy='6.2' r='1.4'/%3E%3Ccircle cx='6.2' cy='11' r='1.4'/%3E%3C/g%3E%3C/svg%3E") no-repeat center / 100% 100%;
+    filter: drop-shadow(0 0 1.5px rgba(0,0,0,.7));
   }
   body.hover .grip { opacity: 1; pointer-events: auto; }
 </style>
@@ -144,7 +158,7 @@
 <script>
   const $ = function (id) { return document.getElementById(id); };
   const stage = $('stage');
-  let cfg = { mode: 'subtitle', fs: 32, color: '#ffffff', bgHex: '#6a85b6', bgHex2: '#f3c6d8', bgA: 0.3, frame: 'none', prevH: 0 };
+  let cfg = { mode: 'subtitle', fs: 32, color: '#ffffff', bgHex: '#6a85b6', bgHex2: '#f3c6d8', bgA: 0.3, frame: 'none', prevH: 0, frameBg: {} };
   let st = null;
   let textMsg = { text: '', dim: true };
   let localOffset = null, localUntil = 0;
@@ -188,8 +202,10 @@
     root.setProperty('--rad', (wreathR(lh) + WREATH_M) * s + 'px'); root.setProperty('--u', s + 'px');
     const cv = document.querySelector('#frame canvas.wreath');
     cv.style.display = 'block';
-    drawWreath(cv, lw, lh, s, { x0: 8 / s - 2, x1: (8 + mw) / s + 2, y0: lh / 2 - mh / s / 2 - 2, y1: lh / 2 + mh / s / 2 + 2 });
-    show('.hopstar', { left: px(8), top: '50%', marginTop: px(-mh / 2), width: px(mw), height: px(mh), backgroundImage: 'url(assets/hopstar.png)', backgroundSize: '100% 100%' });
+    const mTop = Math.max(2, Math.min(H - mh - 2, H * 0.382 - mh / 2)); // mascot centre sits on the golden-ratio line
+    const cyL = (mTop + mh / 2) / s;
+    drawWreath(cv, lw, lh, s, { x0: 8 / s - 2, x1: (8 + mw) / s + 2, y0: cyL - mh / s / 2 - 2, y1: cyL + mh / s / 2 + 2 });
+    show('.hopstar', { left: px(8), top: px(mTop), marginTop: '0px', width: px(mw), height: px(mh), backgroundImage: 'url(assets/hopstar.png)', backgroundSize: '100% 100%' });
     root.setProperty('--pl', px(mw + 22)); root.setProperty('--pr', px(7 * s + 6));
     root.setProperty('--py-top', px(6 * s + 1)); root.setProperty('--py-bot', px(6 * s + 3));
   }
@@ -601,9 +617,49 @@
     let g = 0;
     while (el.scrollWidth > el.clientWidth && size > 12 && g++ < 90) { size -= 0.5; el.style.fontSize = size + 'px'; }
   }
+  // When a frame reserves more room on one side (e.g. the Star Hop mascot on the left), the text would be centred in the
+  // remaining area and look off-centre. Centre it on the window instead whenever it fits there, otherwise shift only as far as needed.
+  function centerOnWindow(el) {
+    const box = $('box'), cs = getComputedStyle(box);
+    const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0;
+    el.style.transform = '';
+    if (Math.abs(pl - pr) < 1) return;
+    const W = box.clientWidth;
+    const rg = document.createRange(); rg.selectNodeContents(el);
+    const tw = rg.getBoundingClientRect().width;
+    const c0 = (pl - pr) / 2;                       // where the text is centred now, relative to the window centre
+    const lo = pl - W / 2 + tw / 2, hi = W / 2 - pr - tw / 2;
+    const d = Math.max(lo, Math.min(hi, 0));        // wanted offset from the window centre
+    if (lo <= hi && Math.abs(d - c0) > 0.5) el.style.transform = 'translateX(' + (d - c0) + 'px)';
+  }
   function mk(cls, text, size) {
     const d = document.createElement('div');
     d.className = 'l ' + cls; d.textContent = text; d.style.fontSize = size + 'px';
+    return d;
+  }
+
+  // Sleeping cat: one solid colour (follows the text colour). Head tucked on the front paws, tail wrapped round the body.
+  const CAT_SVG =
+    '<svg class="cat" viewBox="0 0 120 68" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><defs><mask id="catA" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="5" stroke-linejoin="round" transform="translate(34 44) scale(0.76) translate(-38 -36)"><g transform="rotate(-11 38 38)"><ellipse cx="38" cy="39" rx="23" ry="18"/><path d="M19 30 20.5 18.5 30 23ZM57 30 55.5 18.5 46 23Z"/></g><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g><g fill="#000" stroke="#000" stroke-width="4.2" stroke-linejoin="round"><g transform="translate(90 63.3) scale(.75) translate(-101 -63.3)"><path d="M77 63.3Q70 63.3 70 59.6Q70 55.9 77 55.9L86 53Q101 53 101 56Q101 63.3 92 63.3Z"/><ellipse cx="90" cy="52" rx="11.3" ry="11.3"/></g></g></mask><mask id="catT" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="4" stroke-linejoin="round"><path transform="translate(45 58) scale(.8) translate(-45 -58)" d="M50 58Q45 58 45 51Q45 29 59 23Q73 17 88 22Q103 28 103 43Q103 58 93 58Z"/><g transform="translate(90 63.3) scale(.75) translate(-101 -63.3)"><path d="M77 63.3Q70 63.3 70 59.6Q70 55.9 77 55.9L86 53Q101 53 101 56Q101 63.3 92 63.3Z"/><ellipse cx="90" cy="52" rx="11.3" ry="11.3"/></g><g transform="translate(34 44) scale(0.76) translate(-38 -36)"><g transform="rotate(-11 38 38)"><ellipse cx="38" cy="39" rx="23" ry="18"/><path d="M19 30 20.5 18.5 30 23ZM57 30 55.5 18.5 46 23Z"/></g><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g></g></mask><mask id="catF" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="3.5" stroke-linejoin="round"><path transform="translate(45 58) scale(.8) translate(-45 -58)" d="M50 58Q45 58 45 51Q45 29 59 23Q73 17 88 22Q103 28 103 43Q103 58 93 58Z"/></g></mask><mask id="catPG" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="3.2" stroke-linejoin="round" transform="translate(34 44) scale(0.76) translate(-38 -36)"><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g></mask><mask id="catH" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round"><path d="M25.5 38Q28.5 41.6 31.5 38M44.5 38Q47.5 41.6 50.5 38"/></g><path d="M36.8 42.6H39.2L38 44Z" fill="#000" stroke="#000" stroke-width="1" stroke-linejoin="round"/><path d="M38 44v.8M38 44.8Q36.6 46.4 35.2 45.4M38 44.8Q39.4 46.4 40.8 45.4" fill="none" stroke="#000" stroke-width="1.25" stroke-linecap="round"/><ellipse cx="22.5" cy="43.5" rx="3" ry="1.8" fill="#8a8a8a"/><ellipse cx="53.5" cy="43.5" rx="3" ry="1.8" fill="#8a8a8a"/></mask></defs><g class="body" mask="url(#catA)"><path transform="translate(45 58) scale(.8) translate(-45 -58)" d="M50 58Q45 58 45 51Q45 29 59 23Q73 17 88 22Q103 28 103 43Q103 58 93 58Z"/></g><g><g transform="translate(90 63.3) scale(.75) translate(-101 -63.3)"><path d="M77 63.3Q70 63.3 70 59.6Q70 55.9 77 55.9L86 53Q101 53 101 56Q101 63.3 92 63.3Z"/><ellipse cx="90" cy="52" rx="11.3" ry="11.3"/></g></g><g mask="url(#catT)"><path d="M89 55C101 53 101 63 87 63.5" fill="none" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/></g><g class="head"><g transform="translate(34 44) scale(0.76) translate(-38 -36)"><g mask="url(#catPG)"><g transform="rotate(-11 38 38)"><g mask="url(#catH)"><ellipse cx="38" cy="39" rx="23" ry="18"/><path d="M19 30 20.5 18.5 30 23ZM57 30 55.5 18.5 46 23Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></g></g></g><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g></g></svg>';
+  function buildRest(boxW, boxH) {
+    const h = Math.max(16, Math.min(boxH * 0.68, cfg.fs * 1.9, boxW / 2.4));
+    const w = h * 120 / 68;
+    const d = document.createElement('div');
+    d.className = 'rest';
+    d.style.height = h + 'px'; d.style.width = w + 'px';
+    const BW = $('box').clientWidth, BH = $('box').clientHeight; // centre on the golden-ratio point: 61.8% across, 61.8% down
+    d.style.position = 'absolute'; d.style.margin = '0';
+    d.style.left = Math.max(4, Math.min(BW - w - 4, BW * 0.618 - w / 2)) + 'px';
+    d.style.top = Math.max(2, Math.min(BH - h - 2, BH * 0.618 - h / 2)) + 'px';
+    d.innerHTML = CAT_SVG;
+    const zs = Math.max(9, h * 0.26);
+    [['z', 0], ['Z', 1.2], ['Z', 2.4]].forEach(function (z, i) {
+      const e = document.createElement('span');
+      e.className = 'z'; e.textContent = z[0];
+      e.style.left = (w * 0.31 + i * zs * 0.9) + 'px'; e.style.top = (h * 0.2) + 'px';
+      e.style.fontSize = (zs * (0.8 + i * 0.2)) + 'px'; e.style.animationDelay = z[1] + 's';
+      d.appendChild(e);
+    });
     return d;
   }
 
@@ -626,13 +682,15 @@
     } else { curText = textMsg.text; dim = textMsg.dim; }
 
     const H = $('box').clientHeight - 14, W = $('box').clientWidth;
-    const key = [cfg.mode, cfg.fs, cfg.frame, W, H, st ? idx : 'x', curText, dim].join('\u0001');
+    const rest = !st && !!textMsg.rest;
+    const key = [cfg.mode, cfg.fs, cfg.frame, W, H, st ? idx : 'x', curText, dim, rest ? 'rest' : ''].join('\u0001');
     if (key === lastKey) return;
     lastKey = key;
     const changed = curText !== lastText;
     lastText = curText;
 
     stage.textContent = '';
+    if (rest) { stage.appendChild(buildRest(W - 20, H)); return; }
     if (!curText) return;
     if (cfg.mode === 'lines' && st) {
       const inner = $('box').clientHeight - parseFloat(getComputedStyle($('box')).paddingTop) - parseFloat(getComputedStyle($('box')).paddingBottom);
@@ -646,17 +704,17 @@
       };
       for (let k = before; k >= 1; k--) stage.appendChild(near(idx - k, k));
       const c = mk('cur' + (dim ? ' dim' : '') + (changed ? ' in' : ''), curText, cfg.fs);
-      stage.appendChild(c); fitCur(c, cfg.fs);
+      stage.appendChild(c); fitCur(c, cfg.fs); centerOnWindow(c);
       for (let k = 1; k <= after; k++) stage.appendChild(near(idx + k, k));
     } else {
       const c = mk('cur' + (dim ? ' dim' : '') + (changed ? ' in' : ''), curText, cfg.fs);
-      stage.appendChild(c); fitCur(c, cfg.fs);
+      stage.appendChild(c); fitCur(c, cfg.fs); centerOnWindow(c);
     }
   }
 
   window.overlay.onState(function (p) {
     if (p && p.mode === 'sync' && Array.isArray(p.lines)) st = p;
-    else { st = null; textMsg = { text: (p && p.text) || '', dim: !(p && !p.dim) }; }
+    else { st = null; textMsg = { text: (p && p.text) || '', dim: !(p && !p.dim), rest: !!(p && p.rest) }; }
     render();
   });
   setInterval(render, 40);
@@ -688,10 +746,16 @@
   $('fast').onclick = function () { bump(0.5); };
   $('fsDown').onclick = function () { setCfg({ fs: Math.max(14, cfg.fs - 2) }); };
   $('fsUp').onclick = function () { setCfg({ fs: Math.min(80, cfg.fs + 2) }); };
+  // Each frame keeps its own background colour: Star Hop = light blue-violet, Tokyo Neko = night-city, no frame = none.
+  // Picking a colour while a frame is on is remembered for that frame only, and never leaks into the other frames.
+  const FRAME_BG = {
+    'star-hop': { bgHex: '#6a85b6', bgHex2: '#f3c6d8', bgA: 0.3 },
+    'tokyo-neko': { bgHex: '#0e1330', bgHex2: '#2a1b5a', bgA: 0.82 },
+    none: { bgHex: '#6a85b6', bgHex2: '#f3c6d8', bgA: 0 },
+  };
   function setFrame(f) {
     const patch = { frame: f };
     if (f === 'tokyo-neko') {
-      if (cfg.bgA < 0.5) Object.assign(patch, { bgHex: '#0e1330', bgHex2: '#2a1b5a', bgA: 0.82 });   // night-city backdrop
       if (window.innerHeight < 120) { patch.prevH = window.innerHeight; window.overlay.send('set-height', 130); }   // remember the size to return to
     } else if (cfg.frame === 'tokyo-neko') {
       // leaving Tokyo Neko: shrink back to the size from before (or the mode's normal size if that was not recorded)
@@ -699,10 +763,12 @@
       if (back > 0 && window.innerHeight > back) window.overlay.send('set-height', back);
       patch.prevH = 0;
     }
-    const presetBg = cfg.bgHex === '#0e1330' || (cfg.bgHex === '#6a85b6' && cfg.bgHex2 === '#f3c6d8');   // a frame's own backdrop, not a custom color
-    if (f === 'star-hop' && (cfg.bgHex === '#0e1330' || cfg.bgA === 0)) Object.assign(patch, { bgHex: '#6a85b6', bgHex2: '#f3c6d8', bgA: 0.3 });   // back to the light blue-violet
-    if (f === 'none' && presetBg) Object.assign(patch, { bgHex: '#6a85b6', bgHex2: '#f3c6d8', bgA: 0 });   // no frame: no background color
+    const fb = Object.assign({}, cfg.frameBg);
+    fb[cfg.frame] = { bgHex: cfg.bgHex, bgHex2: cfg.bgHex2 || null, bgA: cfg.bgA };     // remember the background of the frame we are leaving
+    patch.frameBg = fb;
+    Object.assign(patch, fb[f] || FRAME_BG[f] || FRAME_BG.none);                         // and load the one of the frame we are entering
     setCfg(patch);
+    $('bAlpha').value = Math.round(cfg.bgA * 100); syncHue('bHue', cfg.bgHex);
   }
   $('bFrame').onclick = function () { setFrame({ none: 'star-hop', 'star-hop': 'tokyo-neko', 'tokyo-neko': 'none' }[cfg.frame] || 'none'); };
   $('quit').onclick = function () { window.overlay.send('quit'); };
@@ -714,6 +780,26 @@
     ['#000000', 0, 'none'], ['#000000', .35], ['#000000', .7], ['#1c1c1e', .92],
     ['#ffd6e7', .85], ['#e6d9ff', .85], ['#d3ecff', .85], ['#fff6d6', .85],
   ];
+  function hueOf(hex) {
+    const c = hexToRgb(hex).map(function (v) { return v / 255; });
+    const mx = Math.max.apply(null, c), mn = Math.min.apply(null, c), d = mx - mn;
+    if (!d) return null;
+    const h = mx === c[0] ? ((c[1] - c[2]) / d) % 6 : mx === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4;
+    return Math.round(((h * 60) + 360) % 360);
+  }
+  function hslOf(hex) {
+    const c = hexToRgb(hex).map(function (v) { return v / 255; });
+    const mx = Math.max.apply(null, c), mn = Math.min.apply(null, c), d = mx - mn, l = (mx + mn) / 2;
+    const sat = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+    return [hueOf(hex), Math.round(sat * 100), Math.round(l * 100)];
+  }
+  // Put the text-colour sliders where the current colour is, so moving one slider keeps the other attributes of the colour.
+  function syncTextSliders(hex) {
+    const v = hslOf(hex);
+    if (v[0] !== null) $('tHue').value = v[0];
+    $('tLight').value = Math.max(25, Math.min(95, v[2]));
+  }
+  function syncHue(inputId, hex) { const h = hueOf(hex); if (h !== null) $(inputId).value = h; }
   function swatches(el, list, onPick) {
     list.forEach(function (it) {
       const b = document.createElement('b');
@@ -724,9 +810,17 @@
       el.appendChild(b);
     });
   }
-  swatches($('swText'), TEXT_SW, function (c) { setCfg({ color: c }); });
-  swatches($('swBg'), BG_SW, function (it) { setCfg({ bgHex: it[0], bgHex2: it[3] || null, bgA: it[1] }); $('bAlpha').value = Math.round(it[1] * 100); });
-  $('tHue').oninput = $('tLight').oninput = function () { setCfg({ color: hsl(+$('tHue').value, 90, +$('tLight').value) }); };
+  swatches($('swText'), TEXT_SW, function (c) { setCfg({ color: c }); syncTextSliders(c); });
+  swatches($('swBg'), BG_SW, function (it) { setCfg({ bgHex: it[0], bgHex2: it[3] || null, bgA: it[1] }); $('bAlpha').value = Math.round(it[1] * 100); syncHue('bHue', it[0]); });
+  // Hue keeps the current saturation and lightness (white / grey get a vivid colour); Light keeps the current hue and saturation.
+  $('tHue').oninput = function () {
+    const v = hslOf(cfg.color), grey = v[1] < 8;
+    setCfg({ color: hsl(+$('tHue').value, grey ? 90 : v[1], grey ? +$('tLight').value : v[2]) });
+  };
+  $('tLight').oninput = function () {
+    const v = hslOf(cfg.color);
+    setCfg({ color: hsl(v[0] !== null ? v[0] : +$('tHue').value, v[0] !== null ? v[1] : 0, +$('tLight').value) });
+  };
   $('bHue').oninput = function () { setCfg({ bgHex: hsl(+$('bHue').value, 70, 82), bgHex2: null, bgA: Math.max(cfg.bgA, 0.6) }); $('bAlpha').value = Math.round(cfg.bgA * 100); };
   $('bAlpha').oninput = function () { setCfg({ bgA: +$('bAlpha').value / 100 }); };
   function closePops() {
@@ -746,6 +840,7 @@
   $('bBg').onclick = function () { togglePop('popBg'); };
 
   // ---------- hover + click-through switching ----------
+  const HIDE_MS = 600; // how long the control bar stays after the mouse stops moving / leaves it
   let hoverTimer = null, overUi = 0, dragging = false;
   function setHover(on) {
     document.body.classList.toggle('hover', on);
@@ -754,13 +849,15 @@
   document.addEventListener('mousemove', function () {
     setHover(true);
     clearTimeout(hoverTimer);
-    hoverTimer = setTimeout(function () { if (!overUi && !dragging) setHover(false); }, 1500);
+    hoverTimer = setTimeout(function () { if (!overUi && !dragging) setHover(false); }, HIDE_MS);
   });
   [$('bar'), $('grip'), $('popText'), $('popBg')].forEach(function (el) {
     el.addEventListener('mouseenter', function () { overUi++; window.overlay.send('interactive', true); });
     el.addEventListener('mouseleave', function () {
       overUi = Math.max(0, overUi - 1);
       if (!overUi && !dragging) window.overlay.send('interactive', false);
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(function () { if (!overUi && !dragging) setHover(false); }, HIDE_MS);
     });
   });
 
@@ -789,7 +886,12 @@
   window.overlay.getConfig().then(function (c) {
     if (c) Object.keys(cfg).forEach(function (k) { if (c[k] !== undefined) cfg[k] = c[k]; });
     cfg.frame = { wish: 'star-hop', wichu: 'star-hop', city: 'tokyo-neko', cat: 'tokyo-neko', stars: 'none' }[cfg.frame] || cfg.frame; // migrate old frame names
+    if (!c || !c.frameBg) {   // first start with per-frame backgrounds: bind the current frame to its own backdrop once
+      cfg.frameBg = {};
+      if (FRAME_BG[cfg.frame] && cfg.frame !== 'none') { Object.assign(cfg, FRAME_BG[cfg.frame]); window.overlay.send('config', Object.assign({ frameBg: {} }, FRAME_BG[cfg.frame])); }
+    }
     $('bAlpha').value = Math.round(cfg.bgA * 100);
+    syncTextSliders(cfg.color); syncHue('bHue', cfg.bgHex);
     applyColors(); applyFrame(); lastKey = ''; render();
   });
 </script>

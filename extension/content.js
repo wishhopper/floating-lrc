@@ -144,8 +144,8 @@
       };
     } else {
       const m = computeMain(cur);
-      key = 'text|' + m.main;
-      pkt = { mode: 'text', text: m.main, dim: m.dim };
+      key = 'text|' + m.main + '|' + (m.rest ? 'r' : '');
+      pkt = { mode: 'text', text: m.main, dim: m.dim, rest: m.rest };
     }
     if (!force && key === lastPushKey && now - lastPushAt < 1000) return;
     lastPushKey = key;
@@ -192,6 +192,7 @@
   function computeMain(cur) {
     let main = '';
     let dim = false;
+    let rest = false; // show the sleeping cat instead of text
 
     if (status === 'ok') {
       const t = (cur.video ? cur.video.currentTime : 0) + offset;
@@ -205,6 +206,7 @@
     } else if (status === 'none') {
       main = 'No synced lyrics found';
       dim = true;
+      rest = true;
     } else if (status === 'instrumental') {
       main = '♪ Instrumental';
       dim = true;
@@ -214,9 +216,15 @@
     } else {
       main = 'Play a song to begin';
       dim = true;
+      rest = true;
     }
-    return { main: main, dim: dim };
+    return { main: main, dim: dim, rest: rest };
   }
+
+  // Sleeping cat (solid colour = text colour), shown instead of "no lyrics" / when nothing is playing.
+  const CAT_SVG =
+    '<svg class="cat" viewBox="0 0 120 68" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><defs><mask id="catA" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="5" stroke-linejoin="round" transform="translate(34 44) scale(0.76) translate(-38 -36)"><g transform="rotate(-11 38 38)"><ellipse cx="38" cy="39" rx="23" ry="18"/><path d="M19 30 20.5 18.5 30 23ZM57 30 55.5 18.5 46 23Z"/></g><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g><g fill="#000" stroke="#000" stroke-width="4.2" stroke-linejoin="round"><g transform="translate(90 63.3) scale(.75) translate(-101 -63.3)"><path d="M77 63.3Q70 63.3 70 59.6Q70 55.9 77 55.9L86 53Q101 53 101 56Q101 63.3 92 63.3Z"/><ellipse cx="90" cy="52" rx="11.3" ry="11.3"/></g></g></mask><mask id="catT" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="4" stroke-linejoin="round"><path transform="translate(45 58) scale(.8) translate(-45 -58)" d="M50 58Q45 58 45 51Q45 29 59 23Q73 17 88 22Q103 28 103 43Q103 58 93 58Z"/><g transform="translate(90 63.3) scale(.75) translate(-101 -63.3)"><path d="M77 63.3Q70 63.3 70 59.6Q70 55.9 77 55.9L86 53Q101 53 101 56Q101 63.3 92 63.3Z"/><ellipse cx="90" cy="52" rx="11.3" ry="11.3"/></g><g transform="translate(34 44) scale(0.76) translate(-38 -36)"><g transform="rotate(-11 38 38)"><ellipse cx="38" cy="39" rx="23" ry="18"/><path d="M19 30 20.5 18.5 30 23ZM57 30 55.5 18.5 46 23Z"/></g><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g></g></mask><mask id="catF" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="3.5" stroke-linejoin="round"><path transform="translate(45 58) scale(.8) translate(-45 -58)" d="M50 58Q45 58 45 51Q45 29 59 23Q73 17 88 22Q103 28 103 43Q103 58 93 58Z"/></g></mask><mask id="catPG" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="3.2" stroke-linejoin="round" transform="translate(34 44) scale(0.76) translate(-38 -36)"><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g></mask><mask id="catH" maskUnits="userSpaceOnUse" x="-10" y="-10" width="140" height="90"><rect x="-10" y="-10" width="140" height="90" fill="#fff"/><g fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round"><path d="M25.5 38Q28.5 41.6 31.5 38M44.5 38Q47.5 41.6 50.5 38"/></g><path d="M36.8 42.6H39.2L38 44Z" fill="#000" stroke="#000" stroke-width="1" stroke-linejoin="round"/><path d="M38 44v.8M38 44.8Q36.6 46.4 35.2 45.4M38 44.8Q39.4 46.4 40.8 45.4" fill="none" stroke="#000" stroke-width="1.25" stroke-linecap="round"/><ellipse cx="22.5" cy="43.5" rx="3" ry="1.8" fill="#8a8a8a"/><ellipse cx="53.5" cy="43.5" rx="3" ry="1.8" fill="#8a8a8a"/></mask></defs><g class="body" mask="url(#catA)"><path transform="translate(45 58) scale(.8) translate(-45 -58)" d="M50 58Q45 58 45 51Q45 29 59 23Q73 17 88 22Q103 28 103 43Q103 58 93 58Z"/></g><g><g transform="translate(90 63.3) scale(.75) translate(-101 -63.3)"><path d="M77 63.3Q70 63.3 70 59.6Q70 55.9 77 55.9L86 53Q101 53 101 56Q101 63.3 92 63.3Z"/><ellipse cx="90" cy="52" rx="11.3" ry="11.3"/></g></g><g mask="url(#catT)"><path d="M89 55C101 53 101 63 87 63.5" fill="none" stroke="currentColor" stroke-width="6.5" stroke-linecap="round"/></g><g class="head"><g transform="translate(34 44) scale(0.76) translate(-38 -36)"><g mask="url(#catPG)"><g transform="rotate(-11 38 38)"><g mask="url(#catH)"><ellipse cx="38" cy="39" rx="23" ry="18"/><path d="M19 30 20.5 18.5 30 23ZM57 30 55.5 18.5 46 23Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></g></g></g><ellipse cx="29" cy="56" rx="7.6" ry="5"/><ellipse cx="47" cy="56" rx="7.6" ry="5"/></g></g></svg>';
+  const CAT_ZZZ = '<span class="z" style="left:31%;animation-delay:0s">z</span><span class="z" style="left:37%;animation-delay:1.2s">Z</span><span class="z" style="left:43%;animation-delay:2.4s">Z</span>';
 
   function draw(cur) {
     updateDebugAttrs();
@@ -232,10 +240,16 @@
     lastDrawKey = key;
 
     ui.doc.documentElement.setAttribute('data-theme', settings.theme);
-    ui.cur.textContent = main;
+    if (m.rest) {
+      ui.cur.classList.add('restmode');
+      ui.cur.innerHTML = CAT_SVG + CAT_ZZZ;
+    } else {
+      ui.cur.classList.remove('restmode');
+      ui.cur.textContent = main;
+    }
     ui.cur.classList.toggle('dim', dim);
     ui.offsetLabel.textContent = (offset >= 0 ? '+' : '') + offset.toFixed(1) + 's';
-    fit();
+    if (!m.rest) fit();
     if (changedText) {
       // slight fade-in on line change, subtle and unobtrusive
       ui.cur.classList.remove('in');
@@ -265,6 +279,14 @@
     '.cur{width:100%;margin:0;color:var(--fg);font-weight:600;letter-spacing:-.011em;line-height:1.2;text-align:center;' +
     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}' +
     '.cur.dim{color:var(--dim);font-weight:500}' +
+    '.cur.restmode{position:absolute;left:61.8%;top:61.8%;transform:translate(-50%,-50%);display:flex;justify-content:center;opacity:.88;overflow:visible}' +
+    '.cur.restmode .cat{filter:drop-shadow(1px 0 0 rgba(20,22,48,.5)) drop-shadow(-1px 0 0 rgba(20,22,48,.5)) drop-shadow(0 1px 0 rgba(20,22,48,.5)) drop-shadow(0 -1px 0 rgba(20,22,48,.5));height:min(56vh,66px);width:auto;display:block;overflow:visible}' +
+    '.cur.restmode .cat .body{transform-box:fill-box;transform-origin:50% 100%;animation:breathe 3.8s ease-in-out infinite}' +
+    '.cur.restmode .cat .head{animation:purr .13s linear infinite alternate}' +
+    '.cur.restmode .z{position:absolute;top:6%;font-weight:700;font-size:13px;opacity:0;animation:zzz 3.6s ease-in infinite}' +
+    '@keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.06)}}' +
+    '@keyframes purr{from{transform:translateX(-.35px)}to{transform:translateX(.35px)}}' +
+    '@keyframes zzz{0%{opacity:0;transform:translate(0,0) scale(.7)}15%{opacity:.9}100%{opacity:0;transform:translate(10px,-18px) scale(1.15)}}' +
     '.cur.in{animation:in .26s ease-out}' +
     '@keyframes in{from{opacity:.0;transform:translateY(3px)}to{opacity:1;transform:none}}' +
     '.bar{position:fixed;top:4px;right:6px;display:flex;gap:3px;align-items:center;opacity:0;transition:opacity .18s;' +
