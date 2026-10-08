@@ -8,11 +8,16 @@
   const MIN_FS = 12; // smallest font size to shrink to when a line does not fit
 
   let track = null; // { key, title, artist, album, duration }
-  let pending = null; // a track change counts only after two consecutive identical readings
+  let pending = null; // a track change counts only after three consecutive identical readings
+  let pendingN = 0;
   let lines = [];
   let status = 'idle'; // idle | loading | ok | none | instrumental | error
   let offset = 0; // seconds; positive = lyrics appear earlier
   let reqId = 0;
+  // YouTube Music plays consecutive tracks gaplessly inside ONE media stream, so after an auto-advance video.currentTime keeps
+  // counting from the previous track's start. `base` is where the current song began on that clock.
+  let base = 0;
+  let sawTime = 0;
 
   let pip = null;
   let ui = null;
@@ -66,6 +71,7 @@
   // ---------- Track change -> fetch lyrics ----------
   function onTrackChange(t) {
     const myReq = ++reqId;
+    base = track && sawTime > 3 ? Math.max(0, sawTime - 0.3) : 0; // first track of the page: nothing to subtract
     track = t;
     lines = [];
     status = 'loading';
@@ -74,6 +80,14 @@
     storageGet('offset:' + t.key).then(function (v) {
       if (myReq === reqId) offset = Number(v) || 0;
     });
+    console.info('[floating-lrc] new track', t.key, '(req ' + myReq + ')', 'media elements:', document.querySelectorAll('video, audio').length, 'base:', base.toFixed(1), 'time:', (function () { const v = adapter.getMedia(); return v ? Math.round(v.currentTime) + 's paused=' + v.paused : 'none'; })());
+    doLookup(t, myReq, 0);
+  }
+
+  // Look the lyrics up; when nothing comes back (or the service hiccups) while the same track is still playing, ask again a few
+  // times with freshly read metadata - right after a track auto-advances, YouTube Music can briefly report half-updated info.
+  const RETRY_MS = [2000, 5000, 12000];
+  function doLookup(t, myReq, attempt) {
     chrome.runtime.sendMessage(
       {
         type: 'lookup',
@@ -91,19 +105,38 @@
           lines = U.parseLrc(res.synced);
           status = lines.length ? 'ok' : 'none';
         }
+        console.info('[floating-lrc] lookup', attempt, '->', status, t.title + ' | ' + t.artist + ' | ' + Math.round(t.duration), '(req ' + myReq + ')');
         lastDrawKey = '';
+        if ((status === 'none' || status === 'error') && attempt < RETRY_MS.length) {
+          setTimeout(function () {
+            if (myReq !== reqId) return;
+            const cur = readTrack();
+            const fresh = cur.title && Number.isFinite(cur.duration) && cur.duration > 0
+              ? { key: t.key, title: cur.title, artist: cur.artist, album: cur.album, duration: cur.duration }
+              : t;
+            doLookup(fresh, myReq, attempt + 1);
+          }, RETRY_MS[attempt]);
+        }
       }
     );
+  }
+
+  function songTime(cur) {
+    if (!cur.video) return 0;
+    const ct = cur.video.currentTime;
+    if (ct < base - 1) base = 0; // the clock was reset (a fresh start or a seek back): back to plain time
+    return Math.max(0, ct - base);
   }
 
   // ---------- Every tick ----------
   function tick() {
     const cur = readTrack();
     if (cur.title && Number.isFinite(cur.duration) && cur.duration > 0) {
-      const key = cur.title + '|' + cur.artist + '|' + Math.round(cur.duration);
+      const key = cur.title + '|' + cur.artist; // not the duration: YouTube Music's reported length can keep changing while a track loads
       if (!track || track.key !== key) {
-        if (pending === key) {
+        if (pending === key && ++pendingN >= 2) {
           pending = null;
+          pendingN = 0;
           onTrackChange({
             key: key,
             title: cur.title,
@@ -112,10 +145,12 @@
             duration: cur.duration,
           });
         } else {
-          pending = key; // seen for the first time; confirm on the next tick
+          if (pending !== key) { sawTime = cur.video ? cur.video.currentTime : 0; pendingN = 0; console.info('[floating-lrc] saw', key, Math.round(cur.duration), 'paused=' + (cur.video && cur.video.paused)); }
+          pending = key; // seen for the first time; confirm on the next ticks
         }
       } else {
         pending = null;
+        if (Number.isFinite(cur.duration) && cur.duration > 0) track.duration = cur.duration; // keep the latest length for retries
       }
     }
     draw(cur);
@@ -136,7 +171,7 @@
       pkt = {
         mode: 'sync',
         lines: lines,
-        pos: cur.video.currentTime,
+        pos: songTime(cur),
         rate: cur.video.playbackRate || 1,
         paused: !!cur.video.paused,
         offset: offset,
@@ -147,6 +182,7 @@
       key = 'text|' + m.main + '|' + (m.rest ? 'r' : '');
       pkt = { mode: 'text', text: m.main, dim: m.dim, rest: m.rest };
     }
+    pkt.playing = !!(cur.video && !cur.video.paused && cur.video.currentTime > 0);
     if (!force && key === lastPushKey && now - lastPushAt < 1000) return;
     lastPushKey = key;
     lastPushAt = now;
@@ -195,7 +231,7 @@
     let rest = false; // show the sleeping cat instead of text
 
     if (status === 'ok') {
-      const t = (cur.video ? cur.video.currentTime : 0) + offset;
+      const t = songTime(cur) + offset;
       const idx = U.findIndex(lines, t);
       const text = idx >= 0 ? lines[idx].text : '';
       main = text || '♪';

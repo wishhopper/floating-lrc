@@ -187,9 +187,11 @@ function t(name, fn) {
   const fakeDom = (opts) => {
     global.window = {};
     global.document = {
+      querySelectorAll: (sel) => (sel === 'video, audio' ? (opts.media || [video]) : []),
       querySelector: (sel) => {
         if (sel === 'video') return video;
         if (sel === 'ytmusic-player-bar .title') return opts.barTitle ? { textContent: ' ' + opts.barTitle + ' ' } : null;
+        if (sel === 'ytmusic-player-bar .time-info') return opts.timeInfo ? { textContent: opts.timeInfo } : null;
         if (sel === 'ytmusic-player-bar .byline') return opts.byline ? { textContent: opts.byline } : null;
         return null;
       },
@@ -209,6 +211,23 @@ function t(name, fn) {
     const r = a.readTrack();
     assert.deepStrictEqual([r.title, r.artist, r.album, r.duration], ['Song', 'Artist', 'Album', 215.4]);
     assert.strictEqual(r.video, video);
+  });
+  t('adapter: with several media elements, follows the one that is playing', () => {
+    const old = { duration: 175, currentTime: 175, paused: true, ended: true, readyState: 4 };
+    const next = { duration: 205, currentTime: 3, paused: false, ended: false, readyState: 4 };
+    const a = fakeDom({ md: { title: 'S', artist: 'A', album: '' }, media: [old, next] });
+    assert.strictEqual(a.getMedia(), next);
+    assert.strictEqual(a.readTrack().duration, 205);
+  });
+  t('adapter: with several media elements and none playing, prefers a loaded one', () => {
+    const empty = { duration: NaN, currentTime: 0, paused: true, ended: false, readyState: 0 };
+    const loaded = { duration: 200, currentTime: 0, paused: true, ended: false, readyState: 4 };
+    const a = fakeDom({ md: { title: 'S', artist: 'A', album: '' }, media: [empty, loaded] });
+    assert.strictEqual(a.getMedia(), loaded);
+  });
+  t('adapter: takes the true song length from the player bar when it is shown', () => {
+    const a = fakeDom({ md: { title: 'S', artist: 'A', album: '' }, timeInfo: '0:12 / 3:25' });
+    assert.strictEqual(a.readTrack().duration, 205);
   });
   t('adapter: falls back to the player bar when mediaSession is empty', () => {
     const a = fakeDom({ barTitle: 'Bar Song', byline: 'Bar Artist \u2022 Bar Album \u2022 2020' });

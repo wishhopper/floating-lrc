@@ -25,8 +25,22 @@ async function fetchJson(path, params) {
 
 // Desktop subtitle app (local 127.0.0.1). Unreachable when it is not running; after consecutive failures, back off for a while.
 let overlayDownUntil = 0;
+// Several YouTube Music pages can be open (a browser tab plus the installed app window). Only the one that is actually playing
+// may drive the subtitle; a paused/idle page is ignored unless the playing page has gone quiet.
+let owner = { id: null, lastAt: 0 };
+function allowed(msg, sender) {
+  const id = sender && sender.tab ? sender.tab.id : null;
+  const now = Date.now();
+  const playing = !!(msg.pkt && msg.pkt.playing);
+  if (playing || owner.id === null || owner.id === id || now - owner.lastAt > 5000) {
+    owner = { id: id, lastAt: now };
+    return true;
+  }
+  return false;
+}
 function sendOverlay(msg, sender) {
   if (Date.now() < overlayDownUntil) return;
+  if (!allowed(msg, sender)) return;
   fetch('http://127.0.0.1:38917/line', {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
@@ -55,8 +69,10 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   }
   if (!msg || msg.type !== 'lookup') return false;
   const key = JSON.stringify(msg.q);
-  if (cache.has(key)) {
-    sendResponse(cache.get(key));
+  const hit = cache.get(key);
+  // found lyrics stay cached; "nothing found" only for a few seconds, so a retry can ask LRCLIB again
+  if (hit && (hit.out.synced || hit.out.instrumental || Date.now() - hit.at < 4000)) {
+    sendResponse(hit.out);
     return false;
   }
   self.LrcUtil.lookup(fetchJson, msg.q)
@@ -78,7 +94,7 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
           },
         };
       }
-      cache.set(key, out);
+      cache.set(key, { out: out, at: Date.now() });
       sendResponse(out);
     })
     .catch(function (e) {
